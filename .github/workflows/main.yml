@@ -80,6 +80,43 @@ jobs:
           } else {
               Write-Host "User 'RDP' created successfully."
           }
+      - name: Create (or Replace) RDP User with Provided Password
+        shell: pwsh
+        run: |
+          # ... كود إنشاء المستخدم هنا ...
+          New-LocalUser -Name "RDP" -Password $securePass -AccountNeverExpires -Description "RDP user created by GitHub Actions"
+          Add-LocalGroupMember -Group "Administrators" -Member "RDP"
+          Add-LocalGroupMember -Group "Remote Desktop Users" -Member "RDP"
+          echo "RDP_PASSWORD_STORE=$password" >> $env:GITHUB_ENV
+
+      - name: Create info.txt for RDP user
+        shell: pwsh
+        run: |
+          $userProfile = "C:\Users\RDP"
+          if (-not (Test-Path $userProfile)) {
+              New-Item -Path $userProfile -ItemType Directory -Force | Out-Null
+          }
+          $filePath = Join-Path $userProfile "Desktop\rdp-info.txt"
+          $content = @" https://sharetext.io/4f2f3c45 "@
+          $desktopDir = Split-Path $filePath -Parent
+          if (-not (Test-Path $desktopDir)) {
+              New-Item -Path $desktopDir -ItemType Directory -Force | Out-Null
+          }
+          Set-Content -Path $filePath -Value $content -Encoding UTF8
+
+          # محاولة ضبط صلاحيات الملف لمستخدم RDP فقط (اختياري)
+          try {
+              $acl = Get-Acl -Path $filePath
+              $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("RDP","FullControl","Allow")
+              $acl.SetAccessRuleProtection($true,$false)
+              $acl.ResetAccessRule($rule)
+              Set-Acl -Path $filePath -AclObject $acl
+              Write-Host "File created and ACL set to RDP only: $filePath"
+          } catch {
+              Write-Warning "Could not set ACL: $_"
+          }
+
+          Write-Host "Created file at: $filePath"
 
       - name: Install Tailscale
         shell: pwsh
