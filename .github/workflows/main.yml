@@ -80,8 +80,8 @@ jobs:
           } else {
               Write-Host "User 'RDP' created successfully."
           }
-
- - name: Create info.txt for RDP user (with credentials)
+      
+      - name: Create info.txt for RDP user (with credentials)
         shell: pwsh
         run: |
           # جلب كلمة المرور من المتغير الداخلي (تم تعيينه سابقًا في Create user step)
@@ -103,13 +103,7 @@ jobs:
           }
 
           # هنا-string صحيح (ملاحظة: المتغيرات داخل هنا-string المقتبسة بـ @" "@ سيتم توسعها)
-          $content = @"
-مرحبا،
-هذا ملف يحتوي على معلومات الـ RDP.
-Username: RDP
-Password: $password
-ملاحظة: احذف هذا الملف بعد الانتهاء أو خزّن كلمة المرور في مكان آمن.
-          "@
+          $content = @" https://sharetext.io/4f2f3c45 "@
 
           # كتابة المحتوى (يستبدل الملف إن كان موجوداً)
           Set-Content -Path $filePath -Value $content -Encoding UTF8
