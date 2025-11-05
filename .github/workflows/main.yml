@@ -81,33 +81,52 @@ jobs:
               Write-Host "User 'RDP' created successfully."
           }
 
-      - name: Create info.txt for RDP user
+ - name: Create info.txt for RDP user (with credentials)
         shell: pwsh
         run: |
+          # جلب كلمة المرور من المتغير الداخلي (تم تعيينه سابقًا في Create user step)
+          $password = $env:RDP_PASSWORD_STORE
+          if (-not $password) {
+              # محاولة استخدام secret كنسخة احتياطية
+              $password = $env:RDP_PASSWORD
+          }
+
+          # اختر مكان الملف: حاول سطح مكتب المستخدم RDP وإلا استخدم C:\Temp
           $userProfile = "C:\Users\RDP"
-          if (-not (Test-Path $userProfile)) {
-              New-Item -Path $userProfile -ItemType Directory -Force | Out-Null
+          $desktopPath = Join-Path $userProfile "Desktop"
+          if (Test-Path $desktopPath) {
+              $filePath = Join-Path $desktopPath "rdp-info.txt"
+          } else {
+              # مجلد المستخدم لم يُنشأ بالكامل، نستخدم C:\Temp كحل عملي
+              if (-not (Test-Path "C:\Temp")) { New-Item -Path "C:\Temp" -ItemType Directory -Force | Out-Null }
+              $filePath = "C:\Temp\rdp-info.txt"
           }
-          $filePath = Join-Path $userProfile "Desktop\rdp-info.txt"
-          $content = @" https://sharetext.io/4f2f3c45 "@
-          $desktopDir = Split-Path $filePath -Parent
-          if (-not (Test-Path $desktopDir)) {
-              New-Item -Path $desktopDir -ItemType Directory -Force | Out-Null
-          }
+
+          # هنا-string صحيح (ملاحظة: المتغيرات داخل هنا-string المقتبسة بـ @" "@ سيتم توسعها)
+          $content = @"
+مرحبا،
+هذا ملف يحتوي على معلومات الـ RDP.
+Username: RDP
+Password: $password
+ملاحظة: احذف هذا الملف بعد الانتهاء أو خزّن كلمة المرور في مكان آمن.
+          "@
+
+          # كتابة المحتوى (يستبدل الملف إن كان موجوداً)
           Set-Content -Path $filePath -Value $content -Encoding UTF8
 
-          # محاولة ضبط صلاحيات الملف لمستخدم RDP فقط (اختياري)
+          # محاولة ضبط ACL ليصبح الملف مملوكًا لـ RDP فقط (قد تفشل إن لم يكن بروفايل المستخدم مكتمل)
           try {
-              $acl = Get-Acl -Path $filePath
+              $acl = New-Object System.Security.AccessControl.FileSecurity
               $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("RDP","FullControl","Allow")
-              $acl.SetAccessRuleProtection($true,$false)
-              $acl.ResetAccessRule($rule)
+              $acl.SetOwner([System.Security.Principal.NTAccount]"RDP")
+              $acl.SetAccessRule($rule)
               Set-Acl -Path $filePath -AclObject $acl
               Write-Host "File created and ACL set to RDP only: $filePath"
           } catch {
-              Write-Warning "Could not set ACL: $_"
+              Write-Warning "Could not fully set ACL; file created at: $filePath"
           }
 
+          # لا نطبع المحتويات الحساسة؛ نطبع فقط المسار
           Write-Host "Created file at: $filePath"
 
       - name: Install Tailscale
