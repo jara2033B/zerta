@@ -7,7 +7,7 @@ on:
       password:
         description: 'Optional: RDP password. Default set by workflow (visible in dispatch UI). For better security put password into repository secret RDP_PASSWORD.'
         required: false
-        default: 'b123c456a'
+        default: 'B123@bJ2033+'
 
 jobs:
   secure-rdp:
