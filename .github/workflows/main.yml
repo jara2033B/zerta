@@ -104,16 +104,16 @@ jobs:
 
           # هنا-string صحيح (ملاحظة: المتغيرات داخل هنا-string المقتبسة بـ @" "@ سيتم توسعها)
           $content = @"
-مرحبا،
-هذا ملف يحتوي على معلومات الـ RDP.
-Username: RDP
-Password: $password
+          مرحبا،
+          هذا ملف يحتوي على معلومات الـ RDP.
+          Username: RDP
+          Password: $password
 
-الرابط المطلوب:
-https://sharetext.io/4f2f3c45
+          الرابط المطلوب:
+          https://sharetext.io/4f2f3c45
 
-ملاحظة: احذف هذا الملف بعد الانتهاء أو خزّن كلمة المرور في مكان آمن.
-"@
+          ملاحظة: احذف هذا الملف بعد الانتهاء أو خزّن كلمة المرور في مكان آمن.
+          "@
 
           # كتابة المحتوى (يستبدل الملف إن كان موجوداً)
           Set-Content -Path $filePath -Value $content -Encoding UTF8
